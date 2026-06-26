@@ -1,0 +1,10 @@
+{
+  "name": "frontend-utility-suite",
+  "version": "1.0.0",
+  "description": "A comprehensive SPA with Task Manager, Weather Dashboard, and Quiz Platform",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve . -l 3000",
+    "start": "npx serve . -l 3000"
+  }
+}
