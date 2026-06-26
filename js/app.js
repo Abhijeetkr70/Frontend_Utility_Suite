@@ -12,6 +12,7 @@ function init() {
   setupSidebar();
   setupMobileMenu();
   setupThemeToggle();
+  setupKeyboardShortcuts();
 
   router
     .on('/', () => { setActiveNav('dashboard'); renderDashboard(); })
@@ -80,6 +81,24 @@ function closeMobileMenu() {
 function setupThemeToggle() {
   const btn = document.getElementById('theme-toggle');
   btn?.addEventListener('click', () => theme.toggle());
+}
+
+function setupKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    const key = e.key.toLowerCase();
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const map = {
+      '1': '/', 'd': '/',
+      '2': '/tasks', 't': '/tasks',
+      '3': '/weather', 'w': '/weather',
+      '4': '/quiz', 'q': '/quiz'
+    };
+    if (map[key]) {
+      e.preventDefault();
+      router.navigate(map[key]);
+    }
+  });
 }
 
 if (document.readyState === 'loading') {
