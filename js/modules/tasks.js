@@ -9,7 +9,9 @@ let state = {
   filter: 'all',
   priorityFilter: null,
   searchQuery: '',
-  sortBy: 'createdAt'
+  sortBy: 'createdAt',
+  selectedIds: new Set(),
+  selectMode: false
 };
 
 function init() {
@@ -78,11 +80,33 @@ function renderTasks() {
           <h1 class="text-3xl font-bold text-slate-900 dark:text-white">Task Manager</h1>
           <p class="text-slate-500 dark:text-slate-400 mt-1">${state.tasks.length} total tasks · ${state.tasks.filter(t => t.completed).length} completed</p>
         </div>
-        <button id="add-task-btn" class="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition-colors shadow-sm">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          Add Task
-        </button>
+        <div class="flex items-center gap-2">
+          <button id="select-toggle-btn" class="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${state.selectMode ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            ${state.selectMode ? 'Done' : 'Select'}
+          </button>
+          <button id="add-task-btn" class="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Task
+          </button>
+        </div>
       </div>
+
+      ${state.selectedIds.size > 0 ? `
+        <div class="flex items-center gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
+          <span class="text-sm font-medium text-indigo-700 dark:text-indigo-300">${state.selectedIds.size} selected</span>
+          <div class="flex-1"></div>
+          <button id="batch-complete-btn" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors">
+            ${state.selectedIds.size === state.tasks.filter(t => !t.completed).size ? 'Mark Pending' : 'Mark Complete'}
+          </button>
+          <button id="batch-delete-btn" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
+            Delete
+          </button>
+          <button id="batch-clear-btn" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+            Clear
+          </button>
+        </div>
+      ` : ''}
 
       <div class="flex flex-col sm:flex-row gap-4">
         <div class="relative flex-1">
@@ -129,12 +153,20 @@ function renderTaskCard(task) {
 
   const isOverdue = task.dueDate && !task.completed && new Date(task.dueDate) < new Date(new Date().toDateString());
 
+  const isSelected = state.selectedIds.has(task.id);
+
   return `
-    <div class="task-card bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all ${task.completed ? 'opacity-75' : ''}" data-task-id="${task.id}">
+    <div class="task-card bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all ${task.completed ? 'opacity-75' : ''} ${isSelected ? 'ring-2 ring-indigo-500 border-indigo-500' : ''}" data-task-id="${task.id}">
       <div class="flex items-start gap-3">
-        <button class="toggle-task mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${task.completed ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 dark:border-slate-600 hover:border-indigo-400'}" data-task-id="${task.id}">
-          ${task.completed ? '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
-        </button>
+        ${state.selectMode ? `
+          <button class="select-task mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 dark:border-slate-600 hover:border-indigo-400'}" data-task-id="${task.id}">
+            ${isSelected ? '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+          </button>
+        ` : `
+          <button class="toggle-task mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${task.completed ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 dark:border-slate-600 hover:border-indigo-400'}" data-task-id="${task.id}">
+            ${task.completed ? '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+          </button>
+        `}
         <div class="flex-1 min-w-0">
           <div class="flex items-start justify-between gap-2">
             <h3 class="text-sm font-semibold text-slate-900 dark:text-white ${task.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''}">${escapeHtml(task.title)}</h3>
@@ -180,6 +212,23 @@ function attachTaskListeners() {
     if (!target) return;
 
     if (target.id === 'add-task-btn') showTaskForm();
+    if (target.id === 'select-toggle-btn') {
+      state.selectMode = !state.selectMode;
+      if (!state.selectMode) state.selectedIds.clear();
+      renderTasks();
+      return;
+    }
+    if (target.id === 'batch-complete-btn') batchToggleComplete();
+    if (target.id === 'batch-delete-btn') batchDelete();
+    if (target.id === 'batch-clear-btn') { state.selectedIds.clear(); renderTasks(); return; }
+
+    if (target.classList.contains('select-task')) {
+      const id = target.dataset.taskId;
+      if (state.selectedIds.has(id)) state.selectedIds.delete(id);
+      else state.selectedIds.add(id);
+      renderTasks();
+      return;
+    }
 
     const taskId = target.dataset.taskId;
     if (!taskId) return;
@@ -193,6 +242,7 @@ function attachTaskListeners() {
     const chip = e.target.closest('.filter-chip');
     if (chip) {
       state.filter = chip.dataset.filter;
+      state.selectedIds.clear();
       renderTasks();
     }
     const pChip = e.target.closest('.priority-chip');
@@ -218,6 +268,40 @@ function attachTaskListeners() {
       renderTasks();
     });
   }
+}
+
+function batchToggleComplete() {
+  const allCompleted = [...state.selectedIds].every(id => {
+    const t = state.tasks.find(t => t.id === id);
+    return t && t.completed;
+  });
+  state.tasks.forEach(t => {
+    if (state.selectedIds.has(t.id)) t.completed = !allCompleted;
+  });
+  save();
+  toast.success(allCompleted ? 'Tasks marked pending' : 'Tasks completed');
+  state.selectedIds.clear();
+  renderTasks();
+}
+
+function batchDelete() {
+  const count = state.selectedIds.size;
+  modal.open(`
+    <p class="text-slate-600 dark:text-slate-300">Delete <strong>${count}</strong> task${count > 1 ? 's' : ''}? This action cannot be undone.</p>
+    <div class="flex gap-3 mt-6">
+      <button id="confirm-batch-delete" class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-medium transition-colors">Delete</button>
+      <button id="cancel-batch-delete" class="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium transition-colors">Cancel</button>
+    </div>
+  `, { title: 'Delete Tasks' });
+  document.getElementById('confirm-batch-delete')?.addEventListener('click', () => {
+    state.tasks = state.tasks.filter(t => !state.selectedIds.has(t.id));
+    state.selectedIds.clear();
+    save();
+    modal.close();
+    toast.success(`${count} task${count > 1 ? 's' : ''} deleted`);
+    renderTasks();
+  });
+  document.getElementById('cancel-batch-delete')?.addEventListener('click', () => modal.close());
 }
 
 function toggleTask(id) {
