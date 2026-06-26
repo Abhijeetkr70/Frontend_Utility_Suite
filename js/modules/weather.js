@@ -57,6 +57,16 @@ let currentCity = '';
 let weatherData = null;
 let forecastData = null;
 let isLoading = false;
+let useFahrenheit = store.get('useFahrenheit', false);
+
+function formatTemp(c) {
+  if (useFahrenheit) return Math.round(c * 9 / 5 + 32);
+  return Math.round(c);
+}
+
+function tempUnit() {
+  return useFahrenheit ? 'F' : 'C';
+}
 
 function renderWeather() {
   const history = store.get(WEATHER_KEY, []);
@@ -70,6 +80,9 @@ function renderWeather() {
           <h1 class="text-3xl font-bold text-slate-900 dark:text-white">Weather Dashboard</h1>
           <p class="text-slate-500 dark:text-slate-400 mt-1">Real-time weather for any city</p>
         </div>
+        <button id="unit-toggle" class="self-start px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${useFahrenheit ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'}">
+          °C / °F
+        </button>
       </div>
 
       <div class="flex flex-col sm:flex-row gap-3">
@@ -145,9 +158,9 @@ function renderWeatherContent() {
               <h2 class="text-2xl font-bold text-slate-900 dark:text-white">${currentCity}</h2>
               <span class="text-xs text-slate-400 dark:text-slate-500">Now</span>
             </div>
-            <div class="text-5xl font-bold text-slate-900 dark:text-white mb-2">${w.temp}°<span class="text-2xl font-normal text-slate-400">C</span></div>
+            <div class="text-5xl font-bold text-slate-900 dark:text-white mb-2">${formatTemp(w.temp)}°<span class="text-2xl font-normal text-slate-400">${tempUnit()}</span></div>
             <p class="text-slate-500 dark:text-slate-400 font-medium">${w.condition}</p>
-            <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">Feels like ${w.feelsLike}°C · H: ${w.high}° L: ${w.low}°</p>
+            <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">Feels like ${formatTemp(w.feelsLike)}°${tempUnit()} · H: ${formatTemp(w.high)}° L: ${formatTemp(w.low)}°</p>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div class="text-center p-3 rounded-xl bg-white/50 dark:bg-slate-800/50">
@@ -174,8 +187,8 @@ function renderWeatherContent() {
               <div class="flex-shrink-0 w-36 bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 text-center">
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">${f.day}</p>
                 ${getWeatherIcon(f.icon, 'w-10 h-10')}
-                <p class="text-xl font-bold text-slate-900 dark:text-white mt-2">${f.temp}°</p>
-                <p class="text-xs text-slate-400 dark:text-slate-500">H: ${f.high}° L: ${f.low}°</p>
+                <p class="text-xl font-bold text-slate-900 dark:text-white mt-2">${formatTemp(f.temp)}°</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500">H: ${formatTemp(f.high)}° L: ${formatTemp(f.low)}°</p>
                 <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">${f.condition}</p>
               </div>
             `).join('')}
@@ -214,6 +227,12 @@ function attachWeatherListeners() {
       if (e.key === 'Enter' && searchInput.value.trim()) searchCity(searchInput.value.trim());
     });
   }
+
+  document.getElementById('unit-toggle')?.addEventListener('click', () => {
+    useFahrenheit = !useFahrenheit;
+    store.set('useFahrenheit', useFahrenheit);
+    renderWeather();
+  });
 }
 
 async function searchCity(city) {
