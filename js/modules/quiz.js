@@ -1,6 +1,7 @@
 import store from './store.js';
 import toast from './toast.js';
 import modal from './modal.js';
+import { fireConfetti } from './confetti.js';
 
 const QUIZ_KEY = 'quizHistory';
 
@@ -206,6 +207,11 @@ function renderQuiz() {
   `;
 
   attachQuizListeners();
+
+  if (showResults) {
+    const accuracy = quizState.questions.length ? Math.round((quizState.score / quizState.questions.length) * 100) : 0;
+    if (accuracy === 100) setTimeout(fireConfetti, 300);
+  }
 }
 
 function renderHistoryTable(history) {
